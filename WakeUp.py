@@ -13,6 +13,7 @@ from pymongo import MongoClient
 cluster = MongoClient("mongodb+srv://firdauskotp:crontab1997@cluster0.oylmd.mongodb.net/wakeup?retryWrites=true&w=majority")
 db=cluster["wakeup"]
 col1=db["users"]
+col2=db["time"]
 usertime=0
 usid=0
 now=datetime.now()
@@ -44,6 +45,7 @@ def action(msg):
     global logged_user
     global db
     global col1
+    global col2 
     global setStatus
     global perUserTime
     global setUser
@@ -66,9 +68,6 @@ def action(msg):
         else:
             uname=command[0+l+1:].strip()
             unameQuery = col1.find({"name":uname})
-
-            # for testing in unameQuery:
-            #     print(testing["name"])
 
             # for getRegUser in unameQuery:
 
