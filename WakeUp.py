@@ -10,7 +10,7 @@ import mysql.connector
 import pymongo
 from pymongo import MongoClient
 
-cluster = MongoClient("mongodb+srv://firdauskotp:crontab1997@cluster0.oylmd.mongodb.net/wakeup?retryWrites=true&w=majority")
+cluster = MongoClient("mongodb+srv://firdauskotp:secret@cluster0.oylmd.mongodb.net/wakeup?retryWrites=true&w=majority")
 db=cluster["wakeup"]
 col1=db["users"]
 col2=db["time"]
