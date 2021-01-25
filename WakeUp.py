@@ -6,11 +6,10 @@ import string
 from telepot.loop import MessageLoop
 import re
 import random
-import mysql.connector
 import pymongo
 from pymongo import MongoClient
 
-cluster = MongoClient("mongodb+srv://firdauskotp:secret@cluster0.oylmd.mongodb.net/wakeup?retryWrites=true&w=majority")
+cluster = MongoClient("mongodb+srv://firdauskotp:crontab1997@cluster0.oylmd.mongodb.net/wakeup?retryWrites=true&w=majority")
 db=cluster["wakeup"]
 col1=db["users"]
 col2=db["time"]
@@ -29,6 +28,13 @@ logged_user=""
 setStatus=0
 perUserTime=""
 setUser=""
+checkRegUser=0
+checkLoggedUser=0
+validateCrepic=0
+validateProperTime=0
+validateUserId=0
+validateCorName=""
+
 def action(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
@@ -45,10 +51,13 @@ def action(msg):
     global logged_user
     global db
     global col1
-    global col2 
+    global col2
     global setStatus
     global perUserTime
     global setUser
+    global checkRegUser
+    global checkLoggedUser
+    global validateCrepic
 
     print(chat_id)
 
@@ -69,22 +78,18 @@ def action(msg):
             uname=command[0+l+1:].strip()
             unameQuery = col1.find({"name":uname})
 
-            # for getRegUser in unameQuery:
+            checkRegUser=0
 
+            for getRegUser in unameQuery:
+                checkRegUser+=1
 
-            #     if getRegUser["name"] != uname:
-            #         post_user = {"name":uname, "time": 0,"creepypic":0}
-            #         col1.insert_one(post_user)
-            #         WakeMeUpPlsbot.sendMessage(chat_id,str("Username registered!"))
-            #     else:
-            #         WakeMeUpPlsbot.sendMessage(chat_id,str("Username is taken! Please use another username"))
+            if checkRegUser==0:
+                post_user = {"_id":chat_id,"name":uname, "time": 0,"creepypic":0}
+                col1.insert_one(post_user)
+                WakeMeUpPlsbot.sendMessage(chat_id,str("Username registered!"))
+            else:
+                WakeMeUpPlsbot.sendMessage(chat_id,str("Username is taken! Please use another username"))
 
-            # if uname not in unameQuery:
-            #     post_user = {"name":uname, "time": 0,"creepypic":0}
-            #     col1.insert_one(post_user)
-            #     WakeMeUpPlsbot.sendMessage(chat_id,str("Username registered!"))
-            # else:
-            #     WakeMeUpPlsbot.sendMessage(chat_id,str("Username is taken! Please use another username"))
     elif command.find("/login") != -1:
         l=5
         if len(command[0+l+1:])==0:
@@ -92,20 +97,31 @@ def action(msg):
         else:
             logged_user=command[0+l+1:].strip()
             lunameQuery=col1.find({"name":logged_user})
-            if logged_user not in lunameQuery:
+
+            checkLoggedUser=0
+
+            for gettingloggingusers in lunameQuery:
+                checkLoggedUser+=1
+                
+            
+            if checkLoggedUser>0:
                 WakeMeUpPlsbot.sendMessage(chat_id,str("You are now logged in! You can use the full functions of the bot"))
                 setStatus = 1
-                setUser=logged_user
+                # setUser=logged_user
             else:
                 WakeMeUpPlsbot.sendMessage(chat_id,str("The username is not registered. Please review it or register a new username"))
-    #for logged in useres
+    #for logged in users
     elif command == "/curalarm" and setStatus==1:
+        
         if usertime ==0:
             WakeMeUpPlsbot.sendMessage(chat_id,str("You did not set an alarm!"))
         else:
             # WakeMeUpPlsbot.sendMessage(chat_id,usertime)
-            results = col1.find({"name":setUser})
+            results = col1.find({"_id":chat_id})
             for getTime in results:
+                # if getTime["time"]=="00:00":
+                #     WakeMeUpPlsbot.sendMessage(chat_id,str("You did not set an alarm!"))
+                # else:
                 WakeMeUpPlsbot.sendMessage(chat_id,getTime["time"])
     elif command.find("/curans") != -1 and setStatus==1:
         l=6
@@ -114,18 +130,18 @@ def action(msg):
         else:  
             ans = command[0+l+1:].strip()
             x=int(ans)
-            WakeMeUpPlsbot.sendMessage(chat_id,str("Answer stored"))
+            # WakeMeUpPlsbot.sendMessage(chat_id,str("Answer stored"))
     elif command == "/clear" and setStatus==1:
         usertime = 0
         WakeMeUpPlsbot.sendMessage(chat_id,str("Alarm resetted!"))
-        col1.update_one({"name":setUser}, {"$set":{"time": 0}})
+        col1.update_one({"_id":chat_id}, {"$set":{"time": 0}})
     elif command == "/creepypicon" and setStatus==1:
         # crepic=1
-        col1.update_one({"name":setUser}, {"$set":{"crepic": 1}})
+        col1.update_one({"_id":chat_id}, {"$set":{"creepypic": 1}})
         WakeMeUpPlsbot.sendMessage(chat_id,str("You have a terrible fate ahead"))
     elif command == "/creepypicoff" and setStatus==1:
         # crepic=0
-        col1.update_one({"name":setUser}, {"$set":{"crepic": 0}})
+        col1.update_one({"_id":chat_id}, {"$set":{"creepypic": 0}})
         WakeMeUpPlsbot.sendMessage(chat_id,str("Coward :p"))
         
     elif command.find("/alarm") != -1 and setStatus==1:
@@ -150,7 +166,7 @@ def action(msg):
                         num1 = random.randint(0,100)
                         num2 = random.randint(0,100)
                         # perUserTime = {"name":uname}, {"$set":{"time": usertime}}
-                        col1.update_one({"name":setUser}, {"$set":{"time": usertime}})
+                        col1.update_one({"_id":chat_id}, {"$set":{"time": usertime}})
                         
 
                     elif len(zone)==4 and zone[2]!=":":
@@ -160,7 +176,7 @@ def action(msg):
                         num1 = random.randint(0,100)
                         num2 = random.randint(0,100)
                         # perUserTime = {"name":uname}, {"$set":{"time": usertime}}
-                        col1.update_one({"name":setUser}, {"$set":{"time": usertime}})
+                        col1.update_one({"_id":chat_id}, {"$set":{"time": usertime}})
                     elif len(zone)<=3:
                         WakeMeUpPlsbot.sendMessage(chat_id,str("Invalid time"))
                     else:
@@ -170,7 +186,7 @@ def action(msg):
                         num1 = random.randint(0,100)
                         num2 = random.randint(0,100)
                         # # # perUserTime = {"name":uname}, {"$set":{"time": usertime}}
-                        col1.update_one({"name":setUser}, {"$set":{"time": usertime}})
+                        col1.update_one({"_id":chat_id}, {"$set":{"time": usertime}})
                         
                 else:
                     WakeMeUpPlsbot.sendMessage(chat_id,str("Letters detected! Only numbers please"))
@@ -187,43 +203,66 @@ print (WakeMeUpPlsbot.getMe())
 WakeMeUpPlsbot.message_loop({'chat':action})
 #WakeMeUpPlsbot.setWebhook()
 #pause
+
 while 1:
 
     #validtime = now.strftime("%H:%M")
     validtime = strftime("%H:%M")
 
-    if setStatus==1:
-        results = col1.find({"name":setUser})
-        for getTime in results:
-            WakeMeUpPlsbot.sendMessage(usid,getTime["time"])
-    #WORK HERE NEXT
+    idArray=[]
+    timeArray=[]
+    creepypicArray=[]
 
-    if usid ==0:
-        pass
-    else:
+   
+    results = col1.find({})
+    for getComparisonTime in results:
+        validateProperTime=getComparisonTime["time"]
+        validateCrepic=getComparisonTime["creepypic"]
+        validateUserId=getComparisonTime["_id"]
+        validateCorName=getComparisonTime["name"]
+        idArray.append(validateUserId)
+        timeArray.append(validateProperTime)
+        creepypicArray.append(validateCrepic)
+    print(idArray)
+    print(timeArray)
+    print(creepypicArray)
+
+    
+    # if validateUserId ==0:
+    #     pass
+    # else:
         
         
-        if usertime==0:
-            #WakeMeUpPlsbot.sendMessage(usid,str(usertime))
-            pass
-        elif usertime==validtime:
-            while True:
-                WakeMeUpPlsbot.sendMessage(usid,str("WAKE UP! WANT TO STOP? ANSWER THE QUESTION \n " + str(num1) + " + " + str(num2) + "\n YOU SHOULD BE AWAKE NOW I HOPE"))
+    #     if validateProperTime==0:
+    #         #WakeMeUpPlsbot.sendMessage(usid,str(usertime))
+    #         pass
+    for fullValidation in range(len(idArray)):
+        if timeArray[fullValidation]==validtime:
+            # while True:
                 
-                if crepic==1:
-                    WakeMeUpPlsbot.sendPhoto(usid, photo="https://i.pinimg.com/originals/67/0f/44/670f448418af63954c5dc20bc7932754.jpg")
-                else:
-                    pass
+            WakeMeUpPlsbot.sendMessage(idArray[fullValidation],str("WAKE UP! WANT TO STOP? ANSWER THE QUESTION \n " + str(num1) + " + " + str(num2) + "\n YOU SHOULD BE AWAKE NOW I HOPE"))
+            
+            if creepypicArray[fullValidation]==1:
+                WakeMeUpPlsbot.sendPhoto(idArray[fullValidation], photo="https://i.pinimg.com/originals/67/0f/44/670f448418af63954c5dc20bc7932754.jpg")
+            else:
+                pass
+            
+            if int(num1)+int(num2) == int(x):
+                print("loop break")
+                # usertime=0
+                # validateProperTime=0
+                col1.update_one({"_id":idArray[fullValidation]}, {"$set":{"time": 0}})
+                WakeMeUpPlsbot.sendMessage(usid, str("YOU ARE FREE NOW"))
+                x = -1
                 
-                if int(num1)+int(num2) == int(x):
-                    print("loop break")
-                    usertime=0
-                    WakeMeUpPlsbot.sendMessage(usid, str("YOU ARE FREE NOW"))
-                    break
-                elif x==-1:
-                    pass
-                else:
-                    WakeMeUpPlsbot.sendMessage(usid, str("WRONGGGGGGG"))
-                    x = -1
+            elif x==-1:
+                pass
+            else:
+                WakeMeUpPlsbot.sendMessage(validateUserId, str(x) + " IS WRONGGGGGGG")
+                x = -1
+    
+    idArray.clear()
+    timeArray.clear()
+    creepypicArray.clear()
                 
     time.sleep(1)
