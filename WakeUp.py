@@ -10,9 +10,11 @@ import pymongo
 from pymongo import MongoClient
 
 cluster = MongoClient("mongodb+srv://<username>:<password>@cluster0.oylmd.mongodb.net/<database>?retryWrites=true&w=majority")
+#username is mongodb atlas username
+#password is database/mongodb atlas password
+#database is the database name, in this case, wakeup
 db=cluster["wakeup"]
-col1=db["users"]
-col2=db["time"]
+col1=db["users"] #which collection you want to use
 usertime=0
 usid=0
 now=datetime.now()
@@ -29,11 +31,13 @@ setStatus=0
 perUserTime=""
 setUser=""
 checkRegUser=0
+checkRegId=0
 checkLoggedUser=0
 validateCrepic=0
 validateProperTime=0
 validateUserId=0
 validateCorName=""
+validateMatch=0
 
 def action(msg):
     chat_id = msg['chat']['id']
@@ -58,15 +62,16 @@ def action(msg):
     global checkRegUser
     global checkLoggedUser
     global validateCrepic
+    global checkRegId
 
     print(chat_id)
 
     usid = chat_id
 
     if command == "/help":
-        WakeMeUpPlsbot.sendMessage(chat_id,str("REMINDER THAT THIS BOT USES ASIA/SINGAPORE TIMEZONE \n Use /reg followed by a username to register your username. Example: /reg firdauskotp \n Use /login followed by the username you registered to use most of this bot's functions. Example: /login firdauskotp \nUse /alarm followed by the time in 24 hour format and : in the middle to set the alarm time to be spammed! Example: /alarm 01:30 \n Use /clear to clear the time you input \n Use /curtime to know the current time in Asia/Singapore timezone \n Use /curalarm to show the alarm you saved \n Want to go further? use /creepypicon to include an image. If you change your mind, use /creepypicoff. By default it is off \n Want to stop the alarm? Answer the math question given by using /curans followed by the answer"))
+        WakeMeUpPlsbot.sendMessage(chat_id,str("REMINDER THAT THIS BOT USES ASIA/SINGAPORE TIMEZONE. ONE TELEGRAM ACCOUNT CAN ONLY REGISTER ONE ACCOUNT \n Use /reg followed by a username to register your username. Example: /reg firdauskotp \n Use /login followed by the username you registered to use most of this bot's functions. Example: /login firdauskotp \nUse /alarm followed by the time in 24 hour format and : in the middle to set the alarm time to be spammed! Example: /alarm 01:30 \n Use /clear to clear the time you input \n Use /curtime to know the current time in Asia/Singapore timezone \n Use /curalarm to show the alarm you saved \n Want to go further? use /creepypicon to include an image. If you change your mind, use /creepypicoff. By default it is off \n Want to stop the alarm? Answer the math question given by using /curans followed by the answer"))
     elif command == "/start":
-        WakeMeUpPlsbot.sendMessage(chat_id,str("Welcome! REMINDER THAT THIS BOT USES ASIA/SINGAPORE TIMEZONE \n Use /help to know what commands to use \n If you don't have an account, please use /reg followed by a username of your choice first. If you have registered, use /login followed by the username you registered to use the alarm"))
+        WakeMeUpPlsbot.sendMessage(chat_id,str("Welcome! REMINDER THAT THIS BOT USES ASIA/SINGAPORE TIMEZONE. ONE TELEGRAM ACCOUNT CAN ONLY REGISTER ONE ACCOUNT \n Use /help to know what commands to use \n If you don't have an account, please use /reg followed by a username of your choice first. \n If you have registered, use /login followed by the username you registered to use the alarm"))
         WakeMeUpPlsbot.sendPhoto(chat_id,photo="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.redd.it%2Fpb59vnz6zgk51.jpg&f=1&nofb=1")
     elif command == "/curtime":
         WakeMeUpPlsbot.sendMessage(chat_id,strftime("%H:%M"))
@@ -78,17 +83,23 @@ def action(msg):
             uname=command[0+l+1:].strip()
             unameQuery = col1.find({"name":uname})
 
+            idQuery = col1.find({"_id":chat_id})
+
             checkRegUser=0
+            checkRegId=0
 
             for getRegUser in unameQuery:
                 checkRegUser+=1
 
-            if checkRegUser==0:
-                post_user = {"_id":chat_id,"name":uname, "time": 0,"creepypic":0}
+            for getRegID in idQuery:
+                checkRegId+=1
+
+            if checkRegUser==0 and checkRegId==0:
+                post_user = {"_id":chat_id,"name":uname, "time": 0,"creepypic":0,"match":0}
                 col1.insert_one(post_user)
                 WakeMeUpPlsbot.sendMessage(chat_id,str("Username registered!"))
             else:
-                WakeMeUpPlsbot.sendMessage(chat_id,str("Username is taken! Please use another username"))
+                WakeMeUpPlsbot.sendMessage(chat_id,str("Username is taken or there is an account on your current Telegram account! Please use another username"))
 
     elif command.find("/login") != -1:
         l=5
@@ -212,6 +223,7 @@ while 1:
     idArray=[]
     timeArray=[]
     creepypicArray=[]
+    matchArray=[]
 
    
     results = col1.find({})
@@ -220,24 +232,15 @@ while 1:
         validateCrepic=getComparisonTime["creepypic"]
         validateUserId=getComparisonTime["_id"]
         validateCorName=getComparisonTime["name"]
+        validateMatch=getComparisonTime["match"]
         idArray.append(validateUserId)
         timeArray.append(validateProperTime)
         creepypicArray.append(validateCrepic)
-    print(idArray)
-    print(timeArray)
-    print(creepypicArray)
+        matchArray.append(validateMatch)
 
-    
-    # if validateUserId ==0:
-    #     pass
-    # else:
-        
-        
-    #     if validateProperTime==0:
-    #         #WakeMeUpPlsbot.sendMessage(usid,str(usertime))
-    #         pass
     for fullValidation in range(len(idArray)):
-        if timeArray[fullValidation]==validtime:
+        if timeArray[fullValidation]==validtime or matchArray[fullValidation]==1:
+            col1.update_one({"_id":idArray[fullValidation]}, {"$set":{"match": 1}})
             # while True:
                 
             WakeMeUpPlsbot.sendMessage(idArray[fullValidation],str("WAKE UP! WANT TO STOP? ANSWER THE QUESTION \n " + str(num1) + " + " + str(num2) + "\n YOU SHOULD BE AWAKE NOW I HOPE"))
@@ -248,10 +251,10 @@ while 1:
                 pass
             
             if int(num1)+int(num2) == int(x):
-                print("loop break")
+                # print("loop break")
                 # usertime=0
                 # validateProperTime=0
-                col1.update_one({"_id":idArray[fullValidation]}, {"$set":{"time": 0}})
+                col1.update_one({"_id":idArray[fullValidation]}, {"$set":{"match": 0, "time": 0}})
                 WakeMeUpPlsbot.sendMessage(usid, str("YOU ARE FREE NOW"))
                 x = -1
                 
@@ -264,5 +267,6 @@ while 1:
     idArray.clear()
     timeArray.clear()
     creepypicArray.clear()
+    matchArray.clear()
                 
     time.sleep(1)
