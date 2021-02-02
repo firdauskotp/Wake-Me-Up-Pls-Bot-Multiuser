@@ -207,7 +207,7 @@ def action(msg):
         WakeMeUpPlsbot.sendMessage(chat_id,str(now.strftime("Wrong command, use /help to see available commands")))
   
 #token
-WakeMeUpPlsbot = telepot.Bot('1492485154:AAEDV8U7w4TEo8_hFQFLOizJwmRUuHoGfLc')
+WakeMeUpPlsbot = telepot.Bot('paste your bot token here')
 print (WakeMeUpPlsbot.getMe())
 
 #Calling function
